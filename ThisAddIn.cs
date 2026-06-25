@@ -9,40 +9,23 @@ namespace Outlook_Purview_Sensitivity
     {
         private void ThisAddIn_Startup(object sender, System.EventArgs e)
         {
-            Debug.WriteLine("[PS] Startup firing");
-
             try
             {
-                if (this.Application == null)
-                {
-                    Debug.WriteLine("[PS] ERROR: Application is null");
-                    return;
-                }
-
-                Debug.WriteLine("[PS] Application OK");
+                if (this.Application == null) return;
 
                 Outlook.Explorer explorer = this.Application.ActiveExplorer();
                 if (explorer != null)
                 {
-                    Debug.WriteLine("[PS] Explorer found, wiring up");
                     WireUpExplorer(explorer);
                 }
-                else
+                else if (this.Application.Explorers != null)
                 {
-                    Debug.WriteLine("[PS] No explorer, hooking NewExplorer");
-                    if (this.Application.Explorers != null)
-                    {
-                        this.Application.Explorers.NewExplorer += Explorers_NewExplorer;
-                    }
-                    else
-                    {
-                        Debug.WriteLine("[PS] ERROR: Explorers is null");
-                    }
+                    this.Application.Explorers.NewExplorer += Explorers_NewExplorer;
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Debug.WriteLine($"[PS] Startup error: {ex}");
+                // Silently continue
             }
         }
 
@@ -52,13 +35,11 @@ namespace Outlook_Purview_Sensitivity
 
         private void Explorers_NewExplorer(Outlook.Explorer explorer)
         {
-            Debug.WriteLine("[PS] NewExplorer fired");
             WireUpExplorer(explorer);
         }
 
         private void WireUpExplorer(Outlook.Explorer explorer)
         {
-            Debug.WriteLine("[PS] WireUpExplorer");
             if (explorer == null) return;
 
             explorer.FolderSwitch += Explorer_FolderSwitch;
@@ -66,27 +47,20 @@ namespace Outlook_Purview_Sensitivity
             Outlook.MAPIFolder folder = explorer.CurrentFolder;
             if (folder != null)
             {
-                Debug.WriteLine($"[PS] CurrentFolder: {folder.Name}");
                 ColumnManager.EnsureColumn(folder);
                 ColumnManager.StampFolder(folder, maxItems: 50);
                 Marshal.ReleaseComObject(folder);
-            }
-            else
-            {
-                Debug.WriteLine("[PS] ERROR: CurrentFolder is null");
             }
         }
 
         private void Explorer_FolderSwitch()
         {
-            Debug.WriteLine("[PS] FolderSwitch fired");
             Outlook.Explorer explorer = this.Application?.ActiveExplorer();
             if (explorer == null) return;
 
             Outlook.MAPIFolder folder = explorer.CurrentFolder;
             if (folder == null) return;
 
-            Debug.WriteLine($"[PS] Switched to: {folder.Name}");
             ColumnManager.EnsureColumn(folder);
             ColumnManager.StampFolder(folder, maxItems: 50);
             Marshal.ReleaseComObject(folder);

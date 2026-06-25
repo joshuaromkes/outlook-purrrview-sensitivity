@@ -1,5 +1,4 @@
 using System;
-using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Microsoft.Office.Interop.Outlook;
 using SysException = System.Exception;
@@ -16,8 +15,6 @@ namespace Outlook_Purview_Sensitivity
 
             try
             {
-                Debug.WriteLine($"[CM] EnsureColumn: {folder.Name}");
-
                 UserDefinedProperties props = folder.UserDefinedProperties;
                 bool found = false;
                 for (int i = 1; i <= props.Count; i++)
@@ -33,16 +30,11 @@ namespace Outlook_Purview_Sensitivity
                 }
 
                 if (!found)
-                {
                     props.Add(FieldName, OlUserPropertyType.olText);
-                    Debug.WriteLine("[CM] Added user-defined property");
-                }
 
                 Marshal.ReleaseComObject(props);
 
                 object view = folder.CurrentView;
-                Debug.WriteLine($"[CM] View type: {view?.GetType().Name ?? "null"}");
-
                 if (view is TableView tableView)
                 {
                     ViewFields fields = tableView.ViewFields;
@@ -63,11 +55,6 @@ namespace Outlook_Purview_Sensitivity
                     {
                         fields.Add(FieldName);
                         tableView.Save();
-                        Debug.WriteLine("[CM] Added column to view");
-                    }
-                    else
-                    {
-                        Debug.WriteLine("[CM] Column already in view");
                     }
 
                     Marshal.ReleaseComObject(fields);
@@ -76,9 +63,8 @@ namespace Outlook_Purview_Sensitivity
 
                 Marshal.ReleaseComObject(view);
             }
-            catch (SysException ex)
+            catch (SysException)
             {
-                Debug.WriteLine($"[CM] EnsureColumn error: {ex.Message}");
             }
         }
 
@@ -88,7 +74,7 @@ namespace Outlook_Purview_Sensitivity
 
             try
             {
-                string labelName = "TEST-LABEL";
+                string labelName = LabelReader.GetLabelName(mailItem);
 
                 try
                 {
@@ -109,12 +95,9 @@ namespace Outlook_Purview_Sensitivity
                 userProp.Value = labelName;
                 mailItem.Save();
                 Marshal.ReleaseComObject(userProp);
-
-                Debug.WriteLine($"[CM] Stamped: {mailItem.Subject}");
             }
-            catch (SysException ex)
+            catch (SysException)
             {
-                Debug.WriteLine($"[CM] StampItem error: {ex.Message}  Subject: {mailItem.Subject}");
             }
         }
 
@@ -125,39 +108,35 @@ namespace Outlook_Purview_Sensitivity
             try
             {
                 Items items = folder.Items;
-                Debug.WriteLine($"[CM] StampFolder: {folder.Name}  Items.Count={items.Count}");
-
                 int count = 0;
-                int mailCount = 0;
                 for (int i = 1; i <= items.Count && count < maxItems; i++)
                 {
                     object item = items[i];
                     if (item is MailItem mailItem)
                     {
-                        mailCount++;
-                        StampItem(mailItem);
-                        count++;
+                        string label = LabelReader.GetLabelName(mailItem);
+                        if (label != "None")
+                        {
+                            StampItem(mailItem);
+                            count++;
+                        }
                         Marshal.ReleaseComObject(mailItem);
                     }
                     Marshal.ReleaseComObject(item);
                 }
-
-                Debug.WriteLine($"[CM] StampFolder done: {count} stamped, {mailCount} mail items seen");
                 Marshal.ReleaseComObject(items);
 
-                // Force view refresh to show new values
+                // Refresh view to show new values
                 object view = folder.CurrentView;
                 if (view is TableView tableView)
                 {
                     tableView.Apply();
-                    Debug.WriteLine("[CM] View refreshed");
                     Marshal.ReleaseComObject(tableView);
                 }
                 Marshal.ReleaseComObject(view);
             }
-            catch (SysException ex)
+            catch (SysException)
             {
-                Debug.WriteLine($"[CM] StampFolder error: {ex.Message}");
             }
         }
     }
