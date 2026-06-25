@@ -214,6 +214,7 @@
     </Compile>
     <Compile Include="LabelResolver.cs" />
     <Compile Include="LabelReader.cs" />
+    <Compile Include="ColumnManager.cs" />
     <None Include="ThisAddIn.Designer.xml">
       <DependentUpon>ThisAddIn.cs</DependentUpon>
     </None>
