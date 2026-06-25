@@ -1,0 +1,29 @@
+# Visual Studio
+bin/
+obj/
+.vs/
+*.user
+*.suo
+*.csproj.user
+*.dbmdl
+*.jfm
+*.vstx
+*.vstemplate
+*.DotSettings.user
+*.sln.docstates
+
+# Build outputs
+*.dll
+*.pdb
+*.xml
+*.exe
+*.manifest
+*.vsto
+*.application
+
+# Temporary key (keep our own)
+!Outlook-Purview-Sensitivity_TemporaryKey.pfx
+
+# OS files
+.DS_Store
+Thumbs.db
