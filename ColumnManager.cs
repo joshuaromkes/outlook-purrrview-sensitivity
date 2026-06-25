@@ -1,30 +1,23 @@
 using System;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Microsoft.Office.Interop.Outlook;
 using SysException = System.Exception;
 
 namespace Outlook_Purview_Sensitivity
 {
-    /// <summary>
-    /// Manages the custom "PurviewLabel" column in Outlook folder views.
-    /// All COM interop collections are iterated with integer-indexed loops
-    /// to avoid foreach/enumerator issues with Office interop.
-    /// </summary>
     internal static class ColumnManager
     {
         public const string FieldName = "PurviewLabel";
 
-        /// <summary>
-        /// Ensures the PurviewLabel user-defined property exists in the folder
-        /// and is added as a column in the current table view.
-        /// </summary>
         public static void EnsureColumn(MAPIFolder folder)
         {
             if (folder == null) return;
 
             try
             {
-                // Step 1: Add user-defined property to folder (if missing)
+                Debug.WriteLine($"[CM] EnsureColumn: {folder.Name}");
+
                 UserDefinedProperties props = folder.UserDefinedProperties;
                 bool found = false;
                 for (int i = 1; i <= props.Count; i++)
@@ -40,12 +33,16 @@ namespace Outlook_Purview_Sensitivity
                 }
 
                 if (!found)
+                {
                     props.Add(FieldName, OlUserPropertyType.olText);
+                    Debug.WriteLine("[CM] Added user-defined property");
+                }
 
                 Marshal.ReleaseComObject(props);
 
-                // Step 2: Add field to the table view (if missing)
                 object view = folder.CurrentView;
+                Debug.WriteLine($"[CM] View type: {view?.GetType().Name ?? "null"}");
+
                 if (view is TableView tableView)
                 {
                     ViewFields fields = tableView.ViewFields;
@@ -66,6 +63,11 @@ namespace Outlook_Purview_Sensitivity
                     {
                         fields.Add(FieldName);
                         tableView.Save();
+                        Debug.WriteLine("[CM] Added column to view");
+                    }
+                    else
+                    {
+                        Debug.WriteLine("[CM] Column already in view");
                     }
 
                     Marshal.ReleaseComObject(fields);
@@ -74,25 +76,20 @@ namespace Outlook_Purview_Sensitivity
 
                 Marshal.ReleaseComObject(view);
             }
-            catch (SysException)
+            catch (SysException ex)
             {
-                // Non-critical — column will be added on next folder switch
+                Debug.WriteLine($"[CM] EnsureColumn error: {ex.Message}");
             }
         }
 
-        /// <summary>
-        /// Stamps a single MailItem with its Purview label.
-        /// </summary>
         public static void StampItem(MailItem mailItem)
         {
             if (mailItem == null) return;
 
             try
             {
-                // HARDCODED TEST: verifies stamping pipeline works
                 string labelName = "TEST-LABEL";
 
-                // Check if already stamped with the correct value
                 try
                 {
                     UserProperty existing = mailItem.UserProperties[FieldName];
@@ -100,30 +97,27 @@ namespace Outlook_Purview_Sensitivity
                     {
                         string val = existing.Value as string;
                         Marshal.ReleaseComObject(existing);
-                        if (val == labelName) return; // Already correct
+                        if (val == labelName) return;
                     }
                 }
                 catch
                 {
-                    // Property doesn't exist yet — expected
                 }
 
-                // Add or update
                 UserProperty userProp = mailItem.UserProperties.Add(
                     FieldName, OlUserPropertyType.olText);
                 userProp.Value = labelName;
                 mailItem.Save();
                 Marshal.ReleaseComObject(userProp);
+
+                Debug.WriteLine($"[CM] Stamped: {mailItem.Subject}");
             }
-            catch (SysException)
+            catch (SysException ex)
             {
-                // Skip items that can't be stamped
+                Debug.WriteLine($"[CM] StampItem error: {ex.Message}  Subject: {mailItem.Subject}");
             }
         }
 
-        /// <summary>
-        /// Batch stamps visible items in the folder view (up to maxItems).
-        /// </summary>
         public static void StampFolder(MAPIFolder folder, int maxItems = 50)
         {
             if (folder == null) return;
@@ -131,23 +125,29 @@ namespace Outlook_Purview_Sensitivity
             try
             {
                 Items items = folder.Items;
+                Debug.WriteLine($"[CM] StampFolder: {folder.Name}  Items.Count={items.Count}");
+
                 int count = 0;
+                int mailCount = 0;
                 for (int i = 1; i <= items.Count && count < maxItems; i++)
                 {
                     object item = items[i];
                     if (item is MailItem mailItem)
                     {
+                        mailCount++;
                         StampItem(mailItem);
                         count++;
                         Marshal.ReleaseComObject(mailItem);
                     }
                     Marshal.ReleaseComObject(item);
                 }
+
+                Debug.WriteLine($"[CM] StampFolder done: {count} stamped, {mailCount} mail items seen");
                 Marshal.ReleaseComObject(items);
             }
-            catch (SysException)
+            catch (SysException ex)
             {
-                // Non-critical
+                Debug.WriteLine($"[CM] StampFolder error: {ex.Message}");
             }
         }
     }
