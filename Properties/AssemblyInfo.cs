@@ -6,11 +6,11 @@ using System.Security;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("OutlookPurviewColumn")]
-[assembly: AssemblyDescription("Adds Purview sensitivity label column to Outlook")]
+[assembly: AssemblyTitle("Outlook-Purview-Sensitivity")]
+[assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("Open Source")]
-[assembly: AssemblyProduct("OutlookPurviewColumn")]
+[assembly: AssemblyCompany("")]
+[assembly: AssemblyProduct("Outlook-Purview-Sensitivity")]
 [assembly: AssemblyCopyright("Copyright ©  2026")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
@@ -21,7 +21,7 @@ using System.Security;
 [assembly: ComVisible(false)]
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid("fad518e8-078a-4837-b15d-1fd9295ed31e")]
+[assembly: Guid("ec711584-c51d-4a4c-a156-e237e007d972")]
 
 // Version information for an assembly consists of the following four values:
 //

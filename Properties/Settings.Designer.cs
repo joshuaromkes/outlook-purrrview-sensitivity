@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace Test.Properties {
+namespace Outlook_Purview_Sensitivity.Properties {
     
     
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]

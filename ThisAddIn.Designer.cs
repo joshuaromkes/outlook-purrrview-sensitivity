@@ -9,7 +9,7 @@
 //------------------------------------------------------------------------------
 
 #pragma warning disable 414
-namespace OutlookPurviewColumn {
+namespace Outlook_Purview_Sensitivity {
     
     
     /// 
