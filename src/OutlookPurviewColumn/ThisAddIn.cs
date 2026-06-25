@@ -1,8 +1,6 @@
 using System;
-using System.Linq;
-using System.Windows.Forms;
+using System.Runtime.InteropServices;
 using Outlook = Microsoft.Office.Interop.Outlook;
-using Office = Microsoft.Office.Core;
 
 namespace OutlookPurviewColumn
 {
@@ -10,14 +8,24 @@ namespace OutlookPurviewColumn
     {
         private void ThisAddIn_Startup(object sender, System.EventArgs e)
         {
-            var explorer = this.Application.ActiveExplorer();
-            explorer.FolderSwitch += Explorer_FolderSwitch;
-
-            var folder = explorer.CurrentFolder;
-            if (folder != null)
+            try
             {
-                ColumnManager.EnsureColumn(folder);
-                System.Runtime.InteropServices.Marshal.ReleaseComObject(folder);
+                var explorer = this.Application.ActiveExplorer();
+                if (explorer != null)
+                {
+                    WireUpExplorer(explorer);
+                }
+                else
+                {
+                    // No explorer window on startup (rare but possible).
+                    // Hook NewExplorer to catch the first window that opens.
+                    this.Application.Explorers.NewExplorer += Explorers_NewExplorer;
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine(
+                    $"[OutlookPurviewColumn] Startup error: {ex}");
             }
         }
 
@@ -25,14 +33,36 @@ namespace OutlookPurviewColumn
         {
         }
 
-        private void Explorer_FolderSwitch()
+        private void Explorers_NewExplorer(Outlook.Explorer explorer)
         {
-            var folder = this.Application.ActiveExplorer().CurrentFolder;
+            WireUpExplorer(explorer);
+        }
+
+        private void WireUpExplorer(Outlook.Explorer explorer)
+        {
+            if (explorer == null) return;
+            explorer.FolderSwitch += Explorer_FolderSwitch;
+
+            var folder = explorer.CurrentFolder;
             if (folder != null)
             {
                 ColumnManager.EnsureColumn(folder);
                 ColumnManager.StampFolder(folder, maxItems: 50);
-                System.Runtime.InteropServices.Marshal.ReleaseComObject(folder);
+                Marshal.ReleaseComObject(folder);
+            }
+        }
+
+        private void Explorer_FolderSwitch()
+        {
+            var explorer = this.Application.ActiveExplorer();
+            if (explorer == null) return;
+
+            var folder = explorer.CurrentFolder;
+            if (folder != null)
+            {
+                ColumnManager.EnsureColumn(folder);
+                ColumnManager.StampFolder(folder, maxItems: 50);
+                Marshal.ReleaseComObject(folder);
             }
         }
 
