@@ -89,7 +89,8 @@ namespace Outlook_Purview_Sensitivity
 
             try
             {
-                string labelName = LabelReader.GetLabelName(mailItem);
+                // DEBUG: show raw MAPI value to diagnose label reading
+                string labelName = LabelReader.GetRawValue(mailItem);
 
                 // Check if already stamped with the correct value
                 try
@@ -136,13 +137,8 @@ namespace Outlook_Purview_Sensitivity
                     object item = items[i];
                     if (item is MailItem mailItem)
                     {
-                        // Only stamp items that actually have a label
-                        string label = LabelReader.GetLabelName(mailItem);
-                        if (label != "None")
-                        {
-                            StampItem(mailItem);
-                            count++;
-                        }
+                        StampItem(mailItem);
+                        count++;
                         Marshal.ReleaseComObject(mailItem);
                     }
                     Marshal.ReleaseComObject(item);

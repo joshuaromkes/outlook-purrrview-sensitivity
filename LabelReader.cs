@@ -40,5 +40,23 @@ namespace Outlook_Purview_Sensitivity
                 return "None";
             }
         }
+
+        /// <summary>
+        /// DEBUG: Returns the raw msip_labels value for diagnostics.
+        /// </summary>
+        public static string GetRawValue(MailItem mailItem)
+        {
+            if (mailItem == null)
+                return "None";
+
+            try
+            {
+                return mailItem.PropertyAccessor.GetProperty(MsipLabelsPropertyPath) as string ?? "null";
+            }
+            catch (System.Exception ex)
+            {
+                return "ERR: " + ex.Message;
+            }
+        }
     }
 }
