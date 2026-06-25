@@ -25,7 +25,6 @@ namespace Outlook_Purview_Sensitivity
             }
             catch (Exception)
             {
-                // Silently continue
             }
         }
 
@@ -47,6 +46,7 @@ namespace Outlook_Purview_Sensitivity
             Outlook.MAPIFolder folder = explorer.CurrentFolder;
             if (folder != null)
             {
+                Debug.WriteLine($"[PS] WireUp: {folder.Name}");
                 ColumnManager.EnsureColumn(folder);
                 ColumnManager.StampFolder(folder, maxItems: 50);
                 Marshal.ReleaseComObject(folder);
@@ -61,6 +61,7 @@ namespace Outlook_Purview_Sensitivity
             Outlook.MAPIFolder folder = explorer.CurrentFolder;
             if (folder == null) return;
 
+            Debug.WriteLine($"[PS] FolderSwitch: {folder.Name}");
             ColumnManager.EnsureColumn(folder);
             ColumnManager.StampFolder(folder, maxItems: 50);
             Marshal.ReleaseComObject(folder);

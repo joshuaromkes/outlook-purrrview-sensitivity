@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Microsoft.Office.Interop.Outlook;
 using SysException = System.Exception;
@@ -30,7 +31,10 @@ namespace Outlook_Purview_Sensitivity
                 }
 
                 if (!found)
+                {
                     props.Add(FieldName, OlUserPropertyType.olText);
+                    Debug.WriteLine($"[CM] {folder.Name}: added user property");
+                }
 
                 Marshal.ReleaseComObject(props);
 
@@ -55,16 +59,22 @@ namespace Outlook_Purview_Sensitivity
                     {
                         fields.Add(FieldName);
                         tableView.Save();
+                        Debug.WriteLine($"[CM] {folder.Name}: added column to view");
                     }
 
                     Marshal.ReleaseComObject(fields);
                     Marshal.ReleaseComObject(tableView);
                 }
+                else
+                {
+                    Debug.WriteLine($"[CM] {folder.Name}: view is {view?.GetType().Name}, not TableView — skipping column add");
+                }
 
                 Marshal.ReleaseComObject(view);
             }
-            catch (SysException)
+            catch (SysException ex)
             {
+                Debug.WriteLine($"[CM] {folder.Name}: EnsureColumn error: {ex.Message}");
             }
         }
 
