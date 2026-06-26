@@ -54,51 +54,37 @@ namespace Outlook_Purview_Sensitivity
             try
             {
                 view = folder.CurrentView;
-
                 tableView = view as TableView;
+
                 if (tableView == null)
                 {
-                    Debug.WriteLine($"[CM] {folder.Name}: current view '{folder.CurrentView.Name}' is not TableView — switching to Messages");
-                    Marshal.ReleaseComObject(view);
-                    view = null;
-                    SwitchToMessagesView(folder);
-                    view = folder.CurrentView;
-                    tableView = view as TableView;
+                    Debug.WriteLine($"[CM] {folder.Name}: current view is not TableView — view type is {view?.GetType().Name}");
+                    return;
                 }
 
-                if (tableView != null)
+                ViewFields fields = tableView.ViewFields;
+                bool columnFound = false;
+                for (int i = 1; i <= fields.Count; i++)
                 {
-                    ViewFields fields = tableView.ViewFields;
-                    bool columnFound = false;
-                    for (int i = 1; i <= fields.Count; i++)
+                    ViewField field = fields[i];
+                    if (field.ViewXMLSchemaName == FieldName)
                     {
-                        ViewField field = fields[i];
-                        if (field.ViewXMLSchemaName == FieldName)
-                        {
-                            columnFound = true;
-                            Marshal.ReleaseComObject(field);
-                            break;
-                        }
+                        columnFound = true;
                         Marshal.ReleaseComObject(field);
+                        break;
                     }
-
-                    if (!columnFound)
-                    {
-                        ViewField newField = fields.Add(FieldName);
-                        Marshal.ReleaseComObject(newField);
-                        tableView.Save();
-                        Debug.WriteLine($"[CM] {folder.Name}: added column '{FieldName}' to view");
-                    }
-
-                    Marshal.ReleaseComObject(fields);
-                    Marshal.ReleaseComObject(tableView);
-                    tableView = null;
-                    view = null;
+                    Marshal.ReleaseComObject(field);
                 }
-                else
+
+                if (!columnFound)
                 {
-                    Debug.WriteLine($"[CM] {folder.Name}: cannot get TableView even after switch — view type is {view?.GetType().Name}");
+                    ViewField newField = fields.Add(FieldName);
+                    Marshal.ReleaseComObject(newField);
+                    tableView.Save();
+                    Debug.WriteLine($"[CM] {folder.Name}: added column '{FieldName}' to view");
                 }
+
+                Marshal.ReleaseComObject(fields);
             }
             catch (SysException ex)
             {
@@ -220,22 +206,13 @@ namespace Outlook_Purview_Sensitivity
 
                 if (tableView == null)
                 {
-                    Debug.WriteLine(
-                        $"[CM] {folder.Name}: view '{folder.CurrentView.Name}' not TableView — switch to Messages for refresh");
-                    Marshal.ReleaseComObject(view);
-                    view = null;
-                    SwitchToMessagesView(folder);
-                    view = folder.CurrentView;
-                    tableView = view as TableView;
+                    Debug.WriteLine($"[CM] {folder.Name}: cannot refresh — view is not TableView");
+                    return;
                 }
 
-                if (tableView != null)
-                {
-                    tableView.Apply();
-                    Marshal.ReleaseComObject(tableView);
-                    tableView = null;
-                    view = null;
-                }
+                tableView.Apply();
+                Marshal.ReleaseComObject(tableView);
+                tableView = null;
             }
             catch (SysException ex)
             {
@@ -245,53 +222,6 @@ namespace Outlook_Purview_Sensitivity
             {
                 if (tableView != null) Marshal.ReleaseComObject(tableView);
                 if (view != null) Marshal.ReleaseComObject(view);
-            }
-        }
-
-        private static void SwitchToMessagesView(MAPIFolder folder)
-        {
-            Views views = null;
-            object messagesView = null;
-
-            try
-            {
-                views = folder.Views;
-
-                for (int i = 1; i <= views.Count; i++)
-                {
-                    View v = views[i];
-                    if (v.Name == "Messages")
-                    {
-                        messagesView = v;
-                        Marshal.ReleaseComObject(v);
-                        break;
-                    }
-                    Marshal.ReleaseComObject(v);
-                }
-
-                if (messagesView != null)
-                {
-                    ((View)messagesView).Apply();
-                }
-                else
-                {
-                    View msgView = views["Messages"];
-                    if (msgView != null)
-                        msgView.Apply();
-                    else
-                        Debug.WriteLine($"[CM] {folder.Name}: Messages view not found");
-                }
-
-                Debug.WriteLine($"[CM] {folder.Name}: set CurrentView to Messages");
-            }
-            catch (SysException ex)
-            {
-                Debug.WriteLine($"[CM] {folder.Name}: SwitchToMessagesView failed: {ex.Message}");
-            }
-            finally
-            {
-                if (messagesView != null) Marshal.ReleaseComObject(messagesView);
-                if (views != null) Marshal.ReleaseComObject(views);
             }
         }
     }
