@@ -8,7 +8,7 @@
 
     Uninstall: removes registry key and installed files.
 
-.PARAMETER InstallPath
+.PARAMETER SourcePath
     Path to the published output folder containing the .vsto file.
     Required for -Install.
 
@@ -16,14 +16,14 @@
     Remove the add-in from the registry and delete installed files.
 
 .EXAMPLE
-    .\Install-AddIn.ps1 -InstallPath .\bin\Release\app.publish
+    .\Install-AddIn.ps1 -SourcePath .\bin\Release\app.publish
 
 .EXAMPLE
     .\Install-AddIn.ps1 -Uninstall
 #>
 
 param(
-    [string]$InstallPath,
+    [string]$SourcePath,
     [switch]$Uninstall
 )
 
@@ -65,19 +65,19 @@ function Uninstall-AddIn {
 }
 
 function Install-AddIn {
-    if (-not $InstallPath) {
-        Write-Host "ERROR: -InstallPath is required." -ForegroundColor Red
-        Write-Host "Usage: .\Install-AddIn.ps1 -InstallPath path-to-publish-folder" -ForegroundColor Gray
+    if (-not $SourcePath) {
+        Write-Host "ERROR: -SourcePath is required." -ForegroundColor Red
+        Write-Host "Usage: .\Install-AddIn.ps1 -SourcePath path-to-publish-folder" -ForegroundColor Gray
         exit 1
     }
 
-    if (-not (Test-Path $InstallPath)) {
-        Write-Host "ERROR: InstallPath '$InstallPath' does not exist." -ForegroundColor Red
+    if (-not (Test-Path $SourcePath)) {
+        Write-Host "ERROR: SourcePath '$SourcePath' does not exist." -ForegroundColor Red
         Write-Host "Publish the project first: Build -> Publish -> FolderProfile -> Publish" -ForegroundColor Gray
         exit 1
     }
 
-    Write-Host "Installing $AddInName from $InstallPath" -ForegroundColor Cyan
+    Write-Host "Installing $AddInName from $SourcePath" -ForegroundColor Cyan
 
     # Uninstall any existing version first
     Uninstall-AddIn
@@ -85,7 +85,7 @@ function Install-AddIn {
     # Copy files
     Write-Host "  Copying files to $InstallDir ..." -ForegroundColor Gray
     New-Item -Path $InstallDir -ItemType Directory -Force | Out-Null
-    Copy-Item -Path "$InstallPath\*" -Destination $InstallDir -Recurse -Force
+    Copy-Item -Path "$SourcePath\*" -Destination $InstallDir -Recurse -Force
 
     # Find the .vsto file
     $vstoFile = Get-ChildItem -Path $InstallDir -Filter *.vsto -Recurse | Select-Object -First 1

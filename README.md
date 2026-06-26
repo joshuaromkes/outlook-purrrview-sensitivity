@@ -85,7 +85,7 @@ This creates `bin\Release\app.publish\` containing the `.vsto` manifest, `.appli
 Close Outlook, then run:
 
 ```powershell
-.\Install-AddIn.ps1 -InstallPath .\bin\Release\app.publish
+.\Install-AddIn.ps1 -SourcePath .\bin\Release\app.publish
 ```
 
 What it does:
@@ -123,8 +123,20 @@ Remove-Item "$env:LocalAppData\Outlook-Purview-Sensitivity" -Recurse -Force -Err
 
 1. Publish the add-in using Step 1 above
 2. Package `bin\Release\app.publish\` and `Install-AddIn.ps1` together
-3. Deploy `Install-AddIn.ps1 -InstallPath <path>` as a user-context PowerShell script
+3. Deploy `Install-AddIn.ps1 -SourcePath <path>` as a user-context PowerShell script
 4. The add-in installs per-user without admin elevation
+
+### Creating a Release (for maintainers)
+
+```powershell
+# 1. Publish the add-in
+msbuild /t:Publish /p:PublishProfile=FolderProfile /p:Configuration=Release
+
+# 2. Create the release zip (includes installer script + published output)
+Compress-Archive -Path .\bin\Release\app.publish\*, .\Install-AddIn.ps1 -DestinationPath .\Outlook-Purview-Sensitivity-v1.0.0.zip
+```
+
+Upload the zip to a [GitHub release](https://github.com/joshuaromkes/outlook-purview-sensitivity/releases). End users unzip and run `.\Install-AddIn.ps1 -SourcePath .` from the extracted folder.
 
 ## Troubleshooting
 
@@ -138,7 +150,7 @@ The column is added automatically when you open the folder for the first time. I
 
 1. Check `HKCU\Software\Microsoft\Office\Outlook\AddIns\Outlook-Purview-Sensitivity` — `LoadBehavior` must be `3`
 2. File → Options → Add-ins → Manage: Disabled Items → Go → re-enable if listed
-3. Re-run `.\Install-AddIn.ps1 -InstallPath <path>`
+3. Re-run `.\Install-AddIn.ps1 -SourcePath <path>`
 
 ### "Save failed" errors in debug output
 
