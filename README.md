@@ -80,44 +80,27 @@ This creates `bin\Release\app.publish\` containing the `.vsto` manifest, `.appli
 
 ### Step 2: Install
 
-**Option A — PowerShell Script (recommended for IT admins / Intune)**
-
 Close Outlook, then run:
 
 ```powershell
-.\Install-AddIn.ps1 -SourcePath .\bin\Release\app.publish
+.\Install-AddIn.ps1
 ```
 
-What it does:
-- Copies published files to `%LocalAppData%\Outlook-Purview-Sensitivity\`
-- Registers the add-in under `HKCU\Software\Microsoft\Office\Outlook\AddIns\Outlook-Purview-Sensitivity`
-- Sets `LoadBehavior=3` (load at startup) and `Manifest` to the `.vsto` file URL
-- No admin elevation needed (per-user HKCU registration)
+This is a thin wrapper around `setup.exe /install` — the official ClickOnce bootstrapper that handles VSTO runtime installation, proper ClickOnce identity management, and registry registration. No admin elevation needed.
 
-**Option B — ClickOnce setup.exe**
-
-Distribute the contents of `bin\Release\app.publish\` to end users. They run `setup.exe`, which installs the add-in and downloads the VSTO runtime if needed.
+If `-SourcePath` is not specified, it defaults to `.\bin\Release\app.publish`.
 
 ### Uninstall
 
-Close Outlook, then run:
+**Option A — PowerShell script:**
 
 ```powershell
 .\Install-AddIn.ps1 -Uninstall
 ```
 
-What it does:
-- Closes Outlook if running
-- Removes the `HKCU\Software\Microsoft\Office\Outlook\AddIns\Outlook-Purview-Sensitivity` registry key
-- Deletes `%LocalAppData%\Outlook-Purview-Sensitivity\`
-- Uninstall is immediate — restart Outlook to see the column removed
+**Option B — Windows Settings:**
 
-**Manual uninstall** (if the script fails):
-
-```powershell
-Remove-Item "HKCU:\Software\Microsoft\Office\Outlook\AddIns\Outlook-Purview-Sensitivity" -Recurse -Force -ErrorAction SilentlyContinue
-Remove-Item "$env:LocalAppData\Outlook-Purview-Sensitivity" -Recurse -Force -ErrorAction SilentlyContinue
-```
+Settings → Apps & Features → Outlook Purview Sensitivity → Uninstall.
 
 ### Intune / SCCM Deployment
 
