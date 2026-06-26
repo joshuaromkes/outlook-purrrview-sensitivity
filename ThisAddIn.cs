@@ -8,6 +8,7 @@ namespace Outlook_Purview_Sensitivity
 {
     public partial class ThisAddIn
     {
+        private Outlook.Explorer _activeExplorer;
         private Outlook.Items _currentItems;
 
         private void ThisAddIn_Startup(object sender, System.EventArgs e)
@@ -34,6 +35,7 @@ namespace Outlook_Purview_Sensitivity
                     if (explorer != null)
                     {
                         WireUpExplorer(explorer);
+                        _activeExplorer = explorer; // Held at class level — do NOT release here
                     }
                     else
                     {
@@ -43,10 +45,6 @@ namespace Outlook_Purview_Sensitivity
                 catch (SysException ex)
                 {
                     Debug.WriteLine($"[PS] ActiveExplorer error: {ex.Message}");
-                }
-                finally
-                {
-                    if (explorer != null) Marshal.ReleaseComObject(explorer);
                 }
 
                 this.Application.Explorers.NewExplorer += Explorers_NewExplorer;
@@ -63,11 +61,30 @@ namespace Outlook_Purview_Sensitivity
         private void ThisAddIn_Shutdown(object sender, System.EventArgs e)
         {
             Debug.WriteLine("[PS] Add-in shutting down");
+
+            if (_activeExplorer != null)
+            {
+                Marshal.ReleaseComObject(_activeExplorer);
+                _activeExplorer = null;
+            }
+
+            if (_currentItems != null)
+            {
+                _currentItems.ItemAdd -= Items_ItemAdd;
+                Marshal.ReleaseComObject(_currentItems);
+                _currentItems = null;
+            }
         }
 
         private void Explorers_NewExplorer(Outlook.Explorer explorer)
         {
             if (explorer == null) return;
+
+            if (_activeExplorer != null)
+            {
+                Marshal.ReleaseComObject(_activeExplorer);
+            }
+            _activeExplorer = explorer;
             WireUpExplorer(explorer);
         }
 
