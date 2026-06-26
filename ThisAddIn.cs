@@ -11,29 +11,60 @@ namespace Outlook_Purview_Sensitivity
         {
             try
             {
-                if (this.Application == null) return;
+                Debug.WriteLine("[PS] ========================================");
+                Debug.WriteLine("[PS] Outlook-Purview-Sensitivity starting up");
+                Debug.WriteLine($"[PS] Add-in version: {GetType().Assembly.GetName().Version}");
 
-                Outlook.Explorer explorer = this.Application.ActiveExplorer();
-                if (explorer != null)
+                if (this.Application == null)
                 {
-                    WireUpExplorer(explorer);
+                    Debug.WriteLine("[PS] HEALTH: FAIL — Application object is null, add-in cannot function");
+                    return;
                 }
-                else if (this.Application.Explorers != null)
+
+                Debug.WriteLine("[PS] HEALTH: OK — Outlook Application object found");
+                Debug.WriteLine($"[PS] Outlook version: {this.Application.Version}");
+
+                Outlook.Explorer explorer = null;
+                try
                 {
-                    this.Application.Explorers.NewExplorer += Explorers_NewExplorer;
+                    explorer = this.Application.ActiveExplorer();
+                    if (explorer != null)
+                    {
+                        WireUpExplorer(explorer);
+                    }
+                    else
+                    {
+                        Debug.WriteLine("[PS] No active explorer window — waiting for NewExplorer event");
+                    }
                 }
+                catch (SysException ex)
+                {
+                    Debug.WriteLine($"[PS] ActiveExplorer error: {ex.Message}");
+                }
+                finally
+                {
+                    if (explorer != null) Marshal.ReleaseComObject(explorer);
+                }
+
+                this.Application.Explorers.NewExplorer += Explorers_NewExplorer;
+
+                Debug.WriteLine("[PS] Startup complete — listening for explorer events");
+                Debug.WriteLine("[PS] ========================================");
             }
-            catch (Exception)
+            catch (SysException ex)
             {
+                Debug.WriteLine($"[PS] HEALTH: FAIL — Startup error: {ex.GetType().Name}: {ex.Message}");
             }
         }
 
         private void ThisAddIn_Shutdown(object sender, System.EventArgs e)
         {
+            Debug.WriteLine("[PS] Add-in shutting down");
         }
 
         private void Explorers_NewExplorer(Outlook.Explorer explorer)
         {
+            if (explorer == null) return;
             WireUpExplorer(explorer);
         }
 
@@ -41,30 +72,65 @@ namespace Outlook_Purview_Sensitivity
         {
             if (explorer == null) return;
 
-            explorer.FolderSwitch += Explorer_FolderSwitch;
-
-            Outlook.MAPIFolder folder = explorer.CurrentFolder;
-            if (folder != null)
+            try
             {
-                Debug.WriteLine($"[PS] WireUp: {folder.Name}");
-                ColumnManager.EnsureColumn(folder);
-                ColumnManager.StampFolder(folder, maxItems: 50);
-                Marshal.ReleaseComObject(folder);
+                explorer.FolderSwitch += Explorer_FolderSwitch;
+
+                Outlook.MAPIFolder folder = null;
+                try
+                {
+                    folder = explorer.CurrentFolder;
+                    if (folder != null)
+                    {
+                        Debug.WriteLine($"[PS] WireUp: {folder.Name}");
+                        ColumnManager.EnsureColumn(folder);
+                        ColumnManager.StampFolder(folder, maxItems: 50);
+                    }
+                }
+                catch (SysException ex)
+                {
+                    Debug.WriteLine($"[PS] WireUp folder processing error: {ex.Message}");
+                }
+                finally
+                {
+                    if (folder != null) Marshal.ReleaseComObject(folder);
+                }
+            }
+            catch (SysException ex)
+            {
+                Debug.WriteLine($"[PS] WireUpExplorer error: {ex.Message}");
             }
         }
 
         private void Explorer_FolderSwitch()
         {
-            Outlook.Explorer explorer = this.Application?.ActiveExplorer();
-            if (explorer == null) return;
+            try
+            {
+                Outlook.Explorer explorer = null;
+                Outlook.MAPIFolder folder = null;
 
-            Outlook.MAPIFolder folder = explorer.CurrentFolder;
-            if (folder == null) return;
+                try
+                {
+                    explorer = this.Application?.ActiveExplorer();
+                    if (explorer == null) return;
 
-            Debug.WriteLine($"[PS] FolderSwitch: {folder.Name}");
-            ColumnManager.EnsureColumn(folder);
-            ColumnManager.StampFolder(folder, maxItems: 50);
-            Marshal.ReleaseComObject(folder);
+                    folder = explorer.CurrentFolder;
+                    if (folder == null) return;
+
+                    Debug.WriteLine($"[PS] FolderSwitch: {folder.Name}");
+                    ColumnManager.EnsureColumn(folder);
+                    ColumnManager.StampFolder(folder, maxItems: 50);
+                }
+                finally
+                {
+                    if (folder != null) Marshal.ReleaseComObject(folder);
+                    if (explorer != null) Marshal.ReleaseComObject(explorer);
+                }
+            }
+            catch (SysException ex)
+            {
+                Debug.WriteLine($"[PS] FolderSwitch error: {ex.GetType().Name}: {ex.Message}");
+            }
         }
 
         #region VSTO generated code
