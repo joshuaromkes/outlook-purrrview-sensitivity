@@ -6,7 +6,7 @@ Built as a VSTO add-in for classic Outlook (desktop), 64-bit.
 
 ## Features
 
-- Adds a **PurviewLabel** user-defined field to every folder you open
+- Adds a **Sensitivity Label** user-defined field to every folder you open
 - Automatically switches non-TableView folders (Sent Items, subfolders) to Messages view so the column always appears
 - Reads the `msip_labels` MAPI property via `PropertyAccessor` to extract the label name
 - Stamps the label into the custom field so it appears as a sortable column
@@ -29,9 +29,9 @@ Built as a VSTO add-in for classic Outlook (desktop), 64-bit.
 
 1. On startup, the add-in runs a health check and logs status to the debug output
 2. When any folder is opened (including Sent Items, subfolders, shared mailboxes), it:
-   - Adds the `PurviewLabel` user-defined property if missing
+   - Adds the `Sensitivity Label` user-defined property if missing
    - Switches non-TableView views to **Messages** view to display the column
-   - Adds the `PurviewLabel` column to the view
+   - Adds the `Sensitivity Label` column to the view
 3. The first ~50 labeled items in the folder are stamped automatically on folder switch
 4. The label name is parsed from the `msip_labels` MAPI string (e.g., `PII High`, `General`)
 
@@ -95,7 +95,7 @@ The script:
 
 ### Column does not appear in Sent Items or subfolders
 
-The add-in now automatically detects non-TableView folders and switches them to **Messages** view before adding the PurviewLabel column. If the column still doesn't appear:
+The add-in now automatically detects non-TableView folders and switches them to **Messages** view before adding the Sensitivity Label column. If the column still doesn't appear:
 
 1. Manually switch the folder to **Messages** view (View → Change View → Messages)
 2. Restart Outlook to trigger the startup check

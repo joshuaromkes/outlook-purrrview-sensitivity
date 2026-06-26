@@ -8,7 +8,7 @@ namespace Outlook_Purview_Sensitivity
 {
     internal static class ColumnManager
     {
-        public const string FieldName = "PurviewLabel";
+        public const string FieldName = "Sensitivity Label";
 
         public static void EnsureColumn(MAPIFolder folder)
         {
