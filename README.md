@@ -18,8 +18,6 @@ Built as a VSTO COM add-in. No modification of email subjects, categories, or bo
 - New emails stamped on arrival via `ItemAdd` event — no manual refresh needed
 - Handles shared mailboxes, delegate mailboxes, and PST files gracefully
 - Startup health check with debug logging (`[PS]` / `[CM]` prefixes)
-- PowerShell installer with per-user HKCU registration (no admin rights needed)
-- ClickOnce publish profile included for enterprise deployment via Intune / SCCM
 
 ## Tips for Users
 
@@ -52,64 +50,38 @@ Outlook already has everything you need to work with the Sensitivity Label colum
 5. An `ItemAdd` event handler stamps new labeled emails the moment they arrive
 6. Labels are read from the `msip_labels` MAPI header — no modification of the email itself
 
-## Quick Start
+## Build From Source
+
+### Prerequisites
+
+- **Visual Studio 2022 Community Edition** (free) with the **Office/SharePoint development** workload installed
+- **.NET Framework 4.7.2 SDK / Targeting Pack** (included with the Office/SharePoint workload)
+- [Git](https://git-scm.com/) to clone the repository
 
 ```powershell
 git clone https://github.com/joshuaromkes/outlook-purview-sensitivity.git
 cd outlook-purview-sensitivity
 ```
 
-Open `Outlook-Purview-Sensitivity.slnx` in Visual Studio 2022 and press **F5**.
+Open `Outlook-Purview-Sensitivity.slnx` in Visual Studio 2022. To debug: press **F5**. To publish:
 
-## Installation & Uninstall
+**Build → Publish → FolderProfile → Publish**
 
-VSTO add-ins don't have a native install/uninstall mechanism — they rely on ClickOnce or registry registration. This project supports both.
+The published output lands in `bin\Release\app.publish\`. Run `setup.exe /install` from that folder to install the add-in on your machine.
 
-### Step 1: Build & Publish
+### Signing (Optional)
 
-First, publish the add-in from Visual Studio to produce the `.vsto` deployment files:
+The repository ships with a temporary signing key (Visual Studio auto-generates it) — it works for testing but triggers trust prompts.
 
-```powershell
-# In Visual Studio: Build → Publish → select "FolderProfile" → Publish
-#
-# Or from command line:
-msbuild /t:Publish /p:PublishProfile=FolderProfile /p:Configuration=Release
-```
-
-This creates `bin\Release\app.publish\` containing the `.vsto` manifest, `.application` deployment file, and `setup.exe` bootstrapper.
-
-### Step 2: Install
-
-```
-setup.exe /install
-```
-
-### Uninstall
-
-Manually:
-
-```
-setup.exe /uninstall
-```
-
-Or via Windows Settings → Apps & Features → Outlook Purview Sensitivity → Uninstall.
-
-### Intune / SCCM Deployment
-
-1. Publish the add-in using Step 1 above
-2. Deploy `setup.exe /install` as a user-context script or package
-
-### Creating a Release (for maintainers)
+If you have a corporate CA:
+1. **Project Properties → Signing → Select from File →** point to your PFX
+2. To sign `setup.exe` with Authenticode:
 
 ```powershell
-# 1. Publish the add-in
-msbuild /t:Publish /p:PublishProfile=FolderProfile /p:Configuration=Release
-
-# 2. Create the release zip (includes installer script + published output)
-Compress-Archive -Path .\bin\Release\app.publish\* -DestinationPath .\Outlook-Purview-Sensitivity-v1.0.0.zip
+signtool sign /f "path\to\cert.pfx" /p <password> /fd SHA256 /tr http://timestamp.digicert.com /td SHA256 "bin\Release\app.publish\setup.exe"
 ```
 
-Upload the zip to a [GitHub release](https://github.com/joshuaromkes/outlook-purview-sensitivity/releases). End users unzip and run `setup.exe` from the extracted folder.
+Signing eliminates trust prompts on managed workstations.
 
 ## Troubleshooting
 
