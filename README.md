@@ -80,34 +80,16 @@ This creates `bin\Release\app.publish\` containing the `.vsto` manifest, `.appli
 
 ### Step 2: Install
 
-Close Outlook, then run:
-
-```powershell
-.\Install-AddIn.ps1
-```
-
-This is a thin wrapper around `setup.exe /install` — the official ClickOnce bootstrapper that handles VSTO runtime installation, proper ClickOnce identity management, and registry registration. No admin elevation needed.
-
-If `-SourcePath` is not specified, it defaults to `.\bin\Release\app.publish`.
+Close Outlook, then run `setup.exe` from the published folder. This is the official ClickOnce bootstrapper — it installs the VSTO runtime if needed and registers the add-in. No admin elevation required.
 
 ### Uninstall
-
-**Option A — PowerShell script:**
-
-```powershell
-.\Install-AddIn.ps1 -Uninstall
-```
-
-**Option B — Windows Settings:**
 
 Settings → Apps & Features → Outlook Purview Sensitivity → Uninstall.
 
 ### Intune / SCCM Deployment
 
 1. Publish the add-in using Step 1 above
-2. Package `bin\Release\app.publish\` and `Install-AddIn.ps1` together
-3. Deploy `Install-AddIn.ps1 -SourcePath <path>` as a user-context PowerShell script
-4. The add-in installs per-user without admin elevation
+2. Deploy `setup.exe` from `bin\Release\app.publish\` as a user-context script or package
 
 ### Creating a Release (for maintainers)
 
@@ -116,10 +98,10 @@ Settings → Apps & Features → Outlook Purview Sensitivity → Uninstall.
 msbuild /t:Publish /p:PublishProfile=FolderProfile /p:Configuration=Release
 
 # 2. Create the release zip (includes installer script + published output)
-Compress-Archive -Path .\bin\Release\app.publish\*, .\Install-AddIn.ps1 -DestinationPath .\Outlook-Purview-Sensitivity-v1.0.0.zip
+Compress-Archive -Path .\bin\Release\app.publish\* -DestinationPath .\Outlook-Purview-Sensitivity-v1.0.0.zip
 ```
 
-Upload the zip to a [GitHub release](https://github.com/joshuaromkes/outlook-purview-sensitivity/releases). End users unzip and run `.\Install-AddIn.ps1 -SourcePath .` from the extracted folder.
+Upload the zip to a [GitHub release](https://github.com/joshuaromkes/outlook-purview-sensitivity/releases). End users unzip and run `setup.exe` from the extracted folder.
 
 ## Troubleshooting
 
@@ -133,7 +115,7 @@ The column is added automatically when you open the folder for the first time. I
 
 1. Check `HKCU\Software\Microsoft\Office\Outlook\AddIns\Outlook-Purview-Sensitivity` — `LoadBehavior` must be `3`
 2. File → Options → Add-ins → Manage: Disabled Items → Go → re-enable if listed
-3. Re-run `.\Install-AddIn.ps1 -SourcePath <path>`
+3. Re-run `setup.exe` from the published folder
 
 ### "Save failed" errors in debug output
 
@@ -147,7 +129,6 @@ Expected on PST files, delegate mailboxes, or shared mailboxes without write acc
 | `ColumnManager.cs` | User-defined property creation, view column management, item stamping |
 | `LabelReader.cs` | Reads `msip_labels` from MAPI `PropertyAccessor` |
 | `LabelResolver.cs` | Parses human-readable label name from the `msip_labels` string |
-| `Install-AddIn.ps1` | PowerShell installer/uninstaller with HKCU registry registration |
 | `Properties/PublishProfiles/FolderProfile.pubxml` | ClickOnce publish profile for folder-based deployment |
 
 ## Contributing
